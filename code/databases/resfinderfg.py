@@ -4,7 +4,8 @@ from collections import defaultdict
 
 import sys
 sys.path.append('..')
-from functions import check_targets, find_genes_from_database, find_target_annotation, get_or_create_instance
+from functions import find_genes_from_database
+from targets import gene_target
 
 # Missing acronyms:
 # SMZ: pan_19 (KY705325.1) 
@@ -35,10 +36,8 @@ fg2class = {
     'KAN': 'Kanamycin'
 }
 
-def add_resfinderfg_annotations(file, onto, targetfile, logger):
+def add_resfinderfg_annotations(file, onto, logger):
     
-    targets = check_targets(targetfile)
-
     with open(file, 'r') as f:
         lines = [l.strip() for l in f.readlines()]
     for l in lines:
@@ -56,16 +55,11 @@ def add_resfinderfg_annotations(file, onto, targetfile, logger):
 
         dna_acc = fasta_header.split('|')[1]
         gene.dna_accession.append(dna_acc)
-        
-        ab_class_match = find_target_annotation(target=ab_class_name, annotated_targets=targets)
-        
-        if '+' in ab_class_name or ab_class_match is not None:
-            ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, ab_class_name)
-            gene.has_resistance_class.append(ab_class_instance)
-            
-        else:
+
+        success_match = gene_target(gene, og, target=ab_class_name, onto=onto)
+        if not success_match:
             failed_acronym_matches[ab_class_acronym].append(f"{gene.name} ({og.name})")
-    
+        
     if len(failed_acronym_matches) > 0:
         failed_acronym_matches_string = "\n".join([f"{k}: {','.join(v)}" for k,v in failed_acronym_matches.items()])
         logger.warning("ResFinderFG: Failed to find acronym translations for:\n" + failed_acronym_matches_string)

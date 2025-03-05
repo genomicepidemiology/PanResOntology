@@ -6,7 +6,8 @@ from collections import defaultdict
 
 import sys
 sys.path.append('..')
-from functions import check_targets, find_genes_from_database, find_target_annotation, get_or_create_instance
+from functions import find_genes_from_database
+from targets import gene_target
 
 acr2class = {
     'AGly': 'Aminoglycoside',
@@ -23,9 +24,7 @@ acr2class = {
     'Col': 'Colistin'
 }
 
-def add_argannot_annotations(onto, targetfile, logger):
-    targets = check_targets(targetfile)
-
+def add_argannot_annotations(onto, logger):
     matched_genes = find_genes_from_database(onto, database_name='ARGANNOT')
 
     failed_regex_matches = list()
@@ -38,21 +37,10 @@ def add_argannot_annotations(onto, targetfile, logger):
         m = p.findall(fasta_header)
         ab_acronym = m[0] if m else None
         if ab_acronym is not None and ab_acronym in acr2class.keys():
-            ab = acr2class[ab_acronym]
-            ab_match = find_target_annotation(target=ab.title(), annotated_targets=targets)
-            if ab_match:
-                if ab_match[0] == 'antibiotic_class':
-                    ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, ab)
-                    gene.has_resistance_class.append(ab_class_instance)
-                elif ab_match[0] == 'antibotic':
-                    ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype, ab)            
-                    gene.has_predicted_phenotype.append(ab_phenotype_instance)
-
-                    phenotype_class = ab_match[1]['class'].item() 
-                    ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, phenotype_class)
-                    ab_phenotype_instance.phenotype_is_class.append(ab_class_instance)
-            else: 
-                failed_ab_matches[ab_match].append(f"{gene.name} ({og.name})")
+            ab = acr2class[ab_acronym].title()
+            success_match = gene_target(gene, og, target=ab, onto=onto)
+            if not success_match:
+                failed_ab_matches[ab].append(f"{gene.name} ({og.name})")
         else:
             failed_regex_matches.append(f"{gene.name} ({og.name})")
         

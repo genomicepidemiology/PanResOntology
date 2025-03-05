@@ -5,16 +5,14 @@ from collections import defaultdict
 
 import sys
 sys.path.append('..')
-from functions import check_targets, find_genes_from_database, find_target_annotation, get_or_create_instance
-
+from functions import find_genes_from_database
+from targets import gene_target
 
 agg_funcs = {
     'class': lambda x: '/'.join(x.unique())
 }
 
-def add_amrfinderplus_annotations(file, onto, targetfile, logger):
-    targets = check_targets(targetfile)
-
+def add_amrfinderplus_annotations(file, onto, logger):
     amrfinderplus_anno = pd.read_csv(file, sep='\t')
     string_columns = amrfinderplus_anno.select_dtypes(include='object').columns
     amrfinderplus_anno[string_columns] = amrfinderplus_anno[string_columns].replace('nan', np.nan).fillna('')
@@ -38,24 +36,26 @@ def add_amrfinderplus_annotations(file, onto, targetfile, logger):
         ab_classes = m['class'].item().split('/')
         for ab_class in ab_classes:
             ab_class = ab_class.title()
-            matched_class = find_target_annotation(target=ab_class, annotated_targets=targets)
-            if matched_class:
-                if matched_class[0] == 'antibiotic_class':
-                    ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, ab_class)
-                    gene.has_resistance_class.append(ab_class_instance)
-                elif matched_class[0] == 'antibotic':
-                    ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype, ab_class)            
-                    gene.has_predicted_phenotype.append(ab_phenotype_instance)
-
-                    phenotype_class = matched_class[1]['class'].drop_duplicates().item() 
-                    ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, phenotype_class)
-                    ab_phenotype_instance.phenotype_is_class.append(ab_class_instance)
-                    # matched_class_info = 
-                    # logger.warning(f"AMRFinderPlus: This seems like an antibiotic, not a antibiotic class: {matched_class[1]}")
-                    # ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype
-            else:
-                # logger.warning(f"AMRFinderPlus: No class match found for {ab_class} {gene.name} ({og.name})")
+            success_match = gene_target(gene, og, target=ab_class, onto=onto)
+            if not success_match:
                 failed_ab_matches[ab_class] = f"{gene.name} ({og.name})"
+            # matched_class = find_target_annotation(target=ab_class, annotated_targets=targets)
+            # if matched_class:
+            #     if matched_class[0] == 'antibiotic_class':
+            #         ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, ab_class)
+            #         gene.has_resistance_class.append(ab_class_instance)
+            #     elif matched_class[0] == 'antibotic':
+            #         ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype, ab_class)            
+            #         gene.has_predicted_phenotype.append(ab_phenotype_instance)
+
+            #         phenotype_class = matched_class[1]['class'].drop_duplicates().item() 
+            #         ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, phenotype_class)
+            #         ab_phenotype_instance.phenotype_is_class.append(ab_class_instance)
+            #         # matched_class_info = 
+            #         # logger.warning(f"AMRFinderPlus: This seems like an antibiotic, not a antibiotic class: {matched_class[1]}")
+            #         # ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype
+            # else:
+                # logger.warning(f"AMRFinderPlus: No class match found for {ab_class} {gene.name} ({og.name})")
 
     if len(failed_matches) > 0:
         logger.error(f"AMRFinderPlus: Failed to find the genes in the annotation file ({file}): {', '.join(failed_matches)}")    

@@ -6,7 +6,8 @@ from collections import defaultdict
 
 import sys
 sys.path.append('..')
-from functions import check_targets, find_genes_from_database, find_target_annotation, get_or_create_instance
+from functions import find_genes_from_database
+from targets import gene_target
 
 agg_funcs = {
     'Drug Class': lambda x: ';'.join(x.unique()),
@@ -16,8 +17,7 @@ agg_funcs = {
 }
 
 
-def add_card_annotations(file, onto, targetfile, logger):
-    targets = check_targets(targetfile)
+def add_card_annotations(file, onto, logger):
 
     card_annotations = pd.read_csv(file, sep='\t')
 
@@ -48,20 +48,10 @@ def add_card_annotations(file, onto, targetfile, logger):
 
             for phenotype in phenotypes:
                 phenotype = phenotype.strip().replace(' antibiotic', '').title()
-                matched_phenotype = find_target_annotation(target=phenotype, annotated_targets=targets)
-                if matched_phenotype:
-                    if matched_phenotype[0] == 'antibiotic':
-                    
-                        ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype, phenotype)            
-                        gene.has_predicted_phenotype.append(ab_phenotype_instance)
-
-                        phenotype_class = matched_phenotype[1]['class'].item() 
-                        ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, phenotype_class)
-                        ab_phenotype_instance.phenotype_is_class.append(ab_class_instance)
-                else:
+                success_match = gene_target(gene, og, target=phenotype, onto=onto)
+                if not success_match:
                     failed_phenotype_matches[phenotype].append(f"{gene.name} ({og.name})")
-                    # logger.warning(f"CARD: No phenotype match found for {phenotype} {gene.name} ({og.name})")
-            
+
             # Add DNA accession number
             dna_accessions = m['DNA Accession'].item().split(';')
             for dna_acc in dna_accessions:

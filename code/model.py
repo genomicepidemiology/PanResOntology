@@ -80,9 +80,6 @@ def createModel(onto):
 
     class is_from_database(PanGene >> Database):
         namespace = onto
-    
-    class has_original_name(PanGene >> OriginalGene):
-        namespace = onto
 
     class original_fasta_header(OriginalGene >> str): 
         namespace = onto
@@ -96,11 +93,16 @@ def createModel(onto):
     class has_predicted_phenotype(PanGene >> AntibioticResistancePhenotype):
         namespace = onto
 
-    class has_resistance_class(PanGene >> AntibioticResistanceClass):
+    class original_has_predicted_phenotype(OriginalGene >> AntibioticResistancePhenotype):
         namespace = onto
 
-    class phenotype_is_class(AntibioticResistancePhenotype >> AntibioticResistanceClass):
+    class has_resistance_class(PanGene >> AntibioticResistanceClass):
         namespace = onto
+    class original_has_resistance_class(OriginalGene >> AntibioticResistanceClass):
+        namespace = onto
+
+    # class phenotype_is_class(AntibioticResistancePhenotype >> AntibioticResistanceClass):
+    #     namespace = onto
     
     class gene_translated_to_protein(Gene >> Protein):
         namespace = onto
@@ -111,7 +113,17 @@ def createModel(onto):
     class has_predicted_metal_resistance(PanGene >> Metal):
         namespace = onto
 
+    class original_has_predicted_metal_resistance(OriginalGene >> Metal):
+        namespace = onto
+
     class has_predicted_biocide_resistance(PanGene >> Biocide):
+        namespace = onto
+    class original_has_predicted_biocide_resistance(OriginalGene >> Biocide):
+        namespace = onto
+    class phenotype_found_in(AntibioticResistancePhenotype >> Database):
+        namespace = onto
+
+    class class_found_in(AntibioticResistanceClass >> Database):
         namespace = onto
     '''
     Inferred relationships

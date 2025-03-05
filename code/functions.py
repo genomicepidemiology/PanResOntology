@@ -1,8 +1,12 @@
+from numpy import full
 from owlready2 import *
 import pandas as pd
 
 def get_instance(onto, name):
-    instance = onto.search_one(iri="*{}".format(name))
+    # instance = onto.search_one(iri="*{}".format(name))
+    cleaned_name = name.replace(" ", "_").replace("-", "_")
+    full_iri = onto.base_iri + cleaned_name
+    instance = onto.search_one(iri = full_iri)
     return instance
 
 # Function to get or create an instance
@@ -20,12 +24,18 @@ def get_or_create_instance(onto: Ontology, cls: Thing, name: str) -> Thing:
     return instance
 
 def get_or_create_subclass(onto: Ontology, parent_cls: Thing, subclass_name: str) -> Thing:
+    
+    # Remove spaces
+    cleaned_name = subclass_name.replace(" ", "_").replace("-", "_")
 
-    subclass_instance = onto.search_one(iri = onto.base_iri + subclass_name)
+    subclass_instance = onto.search_one(iri = onto.base_iri + cleaned_name)
     
     # Create if it doesnt exist
     if subclass_instance is None:
-        subclass_instance = types.new_class(subclass_name, (parent_cls))
+        subclass_instance = types.new_class(cleaned_name, (parent_cls, ))
+
+        # Set the label to the original name with spaces
+        subclass_instance.label = [cleaned_name]
     
     return subclass_instance
 

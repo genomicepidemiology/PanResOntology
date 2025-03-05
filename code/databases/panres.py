@@ -27,13 +27,12 @@ def add_panres_genes(file, onto, logger):
     panres_metadata['database'] = panres_metadata['database'].str.replace("_genes", "")
 
     genes = panres_metadata.loc[
-        (panres_metadata['database'].isin(['argannot'])), #& ~(panres_metadata['fa_header'].str.contains('Drugs')), 
+        (panres_metadata['database'].isin(['metalres'])), #& ~(panres_metadata['fa_header'].str.contains('Drugs')), 
         'userGeneName'
-    ].sample(500).unique().tolist()
+    ].sample(10).unique().tolist()
     # genes = panres_metadata['userGeneName'].unique().tolist()
     # genes = ['pan_1875', 'pan_451', 'pan_2299', 'pan_5', 'pan_1204']
 
-    logger.info(f"Adding {len(genes)} PanRes genes to the ontology.")
 
     for gene in genes:
         new_gene = onto.PanGene(gene)
@@ -64,4 +63,5 @@ def add_panres_genes(file, onto, logger):
 
             new_gene.equivalent_to.append(original_gene_instance)
     
-    logger.success("Added PanRes genes to the ontology.")
+    # logger.info(f"Adding {len(genes)} PanRes genes to the ontology.")
+    logger.success(f"Added PanRes genes (n={len(genes)}) to the ontology.")

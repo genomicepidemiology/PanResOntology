@@ -1,12 +1,12 @@
-from multiprocessing import Value
-from re import split, sub
+import re
 import pandas as pd
 from owlready2 import *
 from collections import defaultdict
 
 import sys
 sys.path.append('..')
-from functions import check_targets, find_genes_from_database, find_target_annotation, get_or_create_instance
+from functions import find_genes_from_database
+from targets import gene_target
 
 megares2class = {
     'Betalactam': 'Beta-Lactam',
@@ -24,9 +24,7 @@ to_skip = [
     'Drug And Metal'
 ]
 
-def add_megares_annotations(onto, targetfile, logger):
-    targets = check_targets(targetfile)
-
+def add_megares_annotations(onto, logger):
 
     matched_genes = find_genes_from_database(onto, database_name='MegaRes')
 
@@ -49,33 +47,11 @@ def add_megares_annotations(onto, targetfile, logger):
         for resistance_class in resistance_classes.split('/'):
             if resistance_class in to_skip: 
                 continue
-            class_match = find_target_annotation(target=resistance_class, annotated_targets=targets)
-            if class_match:
-                if resistance_type == 'Drugs':
-                    if class_match[0] == 'antibiotic_class':
-                        ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, resistance_class)
-                        gene.has_resistance_class.append(ab_class_instance)
-                    elif class_match[0] == 'antibiotic':
-                        ab_phenotype_instance = get_or_create_instance(onto, onto.AntibioticResistancePhenotype, resistance_class)
-                        gene.has_predicted_phenotype.append(ab_phenotype_instance)
-
-                        # class
-                        ab_class_instance = get_or_create_instance(onto, onto.AntibioticResistanceClass, class_match[1]['class'].unique()[0])
-                        gene.has_resistance_class.append(ab_class_instance)
-
-                elif resistance_type == 'Metals' and class_match[0] == 'metal':
-                    metal_instance = get_or_create_instance(onto, onto.Metal, resistance_class)
-                    gene.has_predicted_metal_resistance.append(metal_instance)
-                elif resistance_type == 'Biocides' and class_match[0] == 'biocide':
-                    biocide_instance = get_or_create_instance(onto, onto.Biocide, resistance_class)
-                    gene.has_predicted_biocide_resistance.append(biocide_instance)
-
-                else:
-                    # logger.error(f"MegaRes: Could not match the type of {resistance_class} to any known annotation for {gene.name} ({og.name}).")
+            success_match = gene_target(gene, og, target=resistance_class, onto=onto)
+            if not success_match:
                     failed_type_matches[resistance_class].append(f"{gene.name} ({og.name})")
-            else:
-                # logger.error(f"MegaRes: Could not figure out what '{resistance_class}' matches ({gene.name} ({og.name})).")
-                failed_class_matches[resistance_class].append(f"{gene.name} ({og.name})")
+            # else:
+                # failed_class_matches[resistance_class].append(f"{gene.name} ({og.name})")
         
     if len(failed_class_matches) > 0: 
         failed_class_matches_string = "\n".join([f"{k}: {', '.join(v)}" for k,v in failed_class_matches.items()])

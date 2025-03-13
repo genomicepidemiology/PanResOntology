@@ -1,0 +1,10 @@
+# files
+*.owl
+*.pdf
+*.png
+*.rdf
+*.ai
+*.bz2
+*DS_store
+*.xslx
+*.html

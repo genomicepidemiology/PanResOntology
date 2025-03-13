@@ -1,3 +1,4 @@
+import subprocess
 from numpy import full
 from owlready2 import *
 import pandas as pd
@@ -43,7 +44,7 @@ def get_or_create_subclass(onto: Ontology, parent_cls: Thing, subclass_name: str
 def find_original_name(gene_instance, database_name):
     # Check if the gene has an original name
     for og in gene_instance.equivalent_to:
-        for ogname in og.original_gene_is_from_database:
+        for ogname in og.is_from_database:
             if ogname.name == database_name:
                 return og
 
@@ -56,7 +57,7 @@ def find_genes_from_database(onto, database_name):
         return []
     
     # Find all genes associated with the database
-    genes = [gene for gene in onto.PanGene.instances() if database_instance in gene.is_from_database]
+    genes = [gene for gene in onto.PanGene.instances() if database_instance in gene.is_from_database and onto.PanGene in gene.is_a]
 
     gene2og = {gene: find_original_name(gene, database_name) for gene in genes}
     return gene2og
@@ -118,3 +119,14 @@ def find_target_annotation(target,annotated_targets):
     biocides = annotated_targets['biocides']
     if target in biocides:
         return ('biocide', target)
+    
+
+def accession_to_pubmed(accession: str):
+
+    cmd = f"esearch -db protein -query {accession} | elink -target pubmed | efetch -format uid"
+    p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    if p.returncode == 0:
+        return p.stdout.decode().strip().split()
+    
+    return None

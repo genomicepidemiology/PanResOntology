@@ -8,3 +8,12 @@
 *DS_store
 *.xslx
 *.html
+*.log
+
+# folders
+/app
+*/__pycache__/
+.ipynb_checkpoints/
+.virtual_documents/
+.vscode/
+card-ontology*/

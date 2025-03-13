@@ -1,4 +1,5 @@
-from owlready2 import AnnotationProperty, Thing, FunctionalProperty
+from argparse import Namespace
+from owlready2 import AnnotationProperty, Thing, FunctionalProperty, ObjectProperty, Or
 
 def createModel(onto):
     '''
@@ -37,6 +38,7 @@ def createModel(onto):
     class MetalRes(Database): pass
     class ResFinder(Database): pass
     class ResFinderFG(Database): pass
+    class BacMet(Database): pass
 
     # There are three types of resistances in PanRes: antibiotic, metal and biocide
     class ResistanceType(Resistance): pass
@@ -50,81 +52,83 @@ def createModel(onto):
     class AntibioticResistanceMechanism(AntibioticResistance): pass
 
     # Metal resistance - metal
+    class MetalClass(MetalResistance): pass
     class Metal(MetalResistance): pass
 
     # Biocide resistance - biocide
+    class BiocideClass(BiocideResistance): pass
     class Biocide(BiocideResistance): pass
+
+    # Unclassified ?
+    class UnclassifiedResistanceClass(ResistanceType): pass
+    class UnclassifiedResistance(UnclassifiedResistanceClass): pass
 
     # In PanRes 2.0, we are pivoting into proteins as well
     class Protein(Resistance):
         description = "Genes are translated into proteins, which was added as a new component of the PanRes database in version 2.0."
 
+    class PanProtein(Protein): pass
     '''
     Functional properties
     '''
 
-    class has_length_bp(PanGene >> int): 
+    class has_length(AnnotationProperty): 
+        domain = [Or([PanGene, PanProtein])]
+        range = [int]
+        namespace = onto
+    class accession(AnnotationProperty): 
+        domain = [Or([PanGene, OriginalGene, Protein])]
+        range = [str]
+        namespace = onto
+    
+    class pubmed(AnnotationProperty): 
+        domain = [Or([PanGene, OriginalGene, Protein])]
+        range = [str]
         namespace = onto
 
-    class has_length_aa(Protein >> int):
+    class card_link(AnnotationProperty): 
+        domain = [Or([PanGene, OriginalGene])]
+        range = [str]
         namespace = onto
 
-    class dna_accession(PanGene >> str): 
+    class is_from_database(ObjectProperty): #PanGene >> Database):
+        domain = [Or([PanGene, OriginalGene])]
+        range = [Database]
         namespace = onto
 
-    class protein_accession(PanGene >> str):
-        namespace = onto
-
-    class card_link(PanGene >> str): 
-        namespace = onto
-
-    class is_from_database(PanGene >> Database):
-        namespace = onto
-
-    class original_fasta_header(OriginalGene >> str): 
+    class original_fasta_header(AnnotationProperty):
+        domain = [OriginalGene] 
+        range = [str]
         namespace = onto
 
     class gene_alt_name(OriginalGene >> str): 
         namespace = onto
 
-    class original_gene_is_from_database(OriginalGene >> Database):
+    class has_predicted_phenotype(ObjectProperty):
+        domain = [Or([PanGene, OriginalGene])]
+        range = [Or([AntibioticResistancePhenotype, Biocide, Metal, UnclassifiedResistance])]
+        namespace = onto
+    class has_resistance_class(ObjectProperty):
+        domain = [Or([PanGene, OriginalGene])]
+        range = [Or([AntibioticResistanceClass, BiocideClass, MetalClass, UnclassifiedResistanceClass])]
         namespace = onto
 
-    class has_predicted_phenotype(PanGene >> AntibioticResistancePhenotype):
-        namespace = onto
-
-    class original_has_predicted_phenotype(OriginalGene >> AntibioticResistancePhenotype):
-        namespace = onto
-
-    class has_resistance_class(PanGene >> AntibioticResistanceClass):
-        namespace = onto
-    class original_has_resistance_class(OriginalGene >> AntibioticResistanceClass):
-        namespace = onto
-
-    # class phenotype_is_class(AntibioticResistancePhenotype >> AntibioticResistanceClass):
-    #     namespace = onto
-    
     class gene_translated_to_protein(Gene >> Protein):
         namespace = onto
 
-    class is_drug_combination(AntibioticResistancePhenotype >> bool): 
+    class is_drug_combination(AnnotationProperty): #(AntibioticResistancePhenotype >> bool): 
+        domain = [Or([AntibioticResistancePhenotype, Metal, Biocide])]
+        range = [bool]
+        namespace = onto
+    class metal_symbol(Metal >> str):
+        namespace = onto
+    class metal_commenent(Metal >> str):
+        namespace = onto
+    class found_in(ObjectProperty):
+        domain = [Or([AntibioticResistancePhenotype, Metal, Biocide, AntibioticResistanceClass, MetalClass, BiocideClass])]
+        range = [Database]
         namespace = onto
 
-    class has_predicted_metal_resistance(PanGene >> Metal):
-        namespace = onto
-
-    class original_has_predicted_metal_resistance(OriginalGene >> Metal):
-        namespace = onto
-
-    class has_predicted_biocide_resistance(PanGene >> Biocide):
-        namespace = onto
-    class original_has_predicted_biocide_resistance(OriginalGene >> Biocide):
-        namespace = onto
-    class phenotype_found_in(AntibioticResistancePhenotype >> Database):
-        namespace = onto
-
-    class class_found_in(AntibioticResistanceClass >> Database):
-        namespace = onto
     '''
     Inferred relationships
     '''
@@ -133,6 +137,19 @@ def createModel(onto):
         namespace = onto
         equivalent_to = [
             PanGene & 
-            has_resistance_class.some(AntibioticResistanceClass) &
-            original_gene_is_from_database.some(Database)
+            Or([has_resistance_class.some(AntibioticResistanceClass), has_predicted_phenotype.some(AntibioticResistancePhenotype)])
+        ]
+    
+    class BiocideesistanceGene(PanGene):
+        namespace = onto
+        equivalent_to = [
+            PanGene & 
+            has_resistance_class.some(Biocide) 
+        ]
+    
+    class MetalResistanceGene(PanGene):
+        namespace = onto
+        equivalent_to = [
+            PanGene & 
+            has_resistance_class.some(Metal) 
         ]

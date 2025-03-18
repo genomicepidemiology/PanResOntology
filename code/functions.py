@@ -43,7 +43,7 @@ def get_or_create_subclass(onto: Ontology, parent_cls: Thing, subclass_name: str
 
 def find_original_name(gene_instance, database_name):
     # Check if the gene has an original name
-    for og in gene_instance.equivalent_to:
+    for og in gene_instance.same_as:
         for ogname in og.is_from_database:
             if ogname.name == database_name:
                 return og
@@ -70,7 +70,7 @@ def clean_gene_name(gene_name, db):
     elif db == 'card_amr':
         return gene_name.split('|')[5].split(' [')[0]
     elif db == 'megares':
-        return gene_name.split('|')[0]
+        return gene_name.split('|')[4]
     elif db == 'argannot':
         return ")".join(gene_name.split('|')[0].split(')')[1:])
     elif db == 'functional_amr': 

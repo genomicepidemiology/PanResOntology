@@ -17,19 +17,18 @@ agg_funcs = {
 }
 
 
-def add_card_annotations(file, onto, logger):
+def add_card_annotations(file: str, onto: Ontology, logger, db_name: str = 'CARD'):
 
     card_annotations = pd.read_csv(file, sep='\t')
 
     p = re.compile(r"(ARO\:\d+)")
 
-    matched_genes = find_genes_from_database(onto, database_name='CARD')
+    matched_genes = find_genes_from_database(onto, database_name=db_name)
 
     failed_matches = []
     failed_phenotype_matches = defaultdict(list)
 
     for gene, og in matched_genes.items():
-        
         fasta_header = og.original_fasta_header[0]
         regex_match = p.findall(fasta_header)
         if regex_match:
@@ -48,14 +47,15 @@ def add_card_annotations(file, onto, logger):
 
             for phenotype in phenotypes:
                 phenotype = phenotype.strip().replace(' antibiotic', '').title()
-                success_match = gene_target(gene, og, target=phenotype, onto=onto)
+                success_match = gene_target(gene, og, target=phenotype, onto=onto, db_name=db_name)
                 if not success_match:
                     failed_phenotype_matches[phenotype].append(f"{gene.name} ({og.name})")
 
             # Add DNA accession number
             dna_accessions = m['DNA Accession'].item().split(';')
             for dna_acc in dna_accessions:
-                gene.dna_accession.append(dna_acc)
+                gene.accession.append(dna_acc)
+                og.accession.append(dna_acc)
 
             # Add protein accession number
 
@@ -64,10 +64,10 @@ def add_card_annotations(file, onto, logger):
             gene.card_link.append(card_url)
     
     if len(failed_matches) > 0:
-        logger.error(f"CARD: Failed to find the genes in the annotation file ({file}): {', '.join(failed_matches)}")    
+        logger.error(f"{db_name}: Failed to find the genes in the annotation file ({file}): {', '.join(failed_matches)}")    
 
     if len(failed_phenotype_matches):
         failed_phenotype_matches_string = "\n".join([f"{k}: {', '.join(v)}" for k,v in failed_phenotype_matches.items()])
-        logger.warning("CARD: Could not match phenotypes annotations for the following:\n" + failed_phenotype_matches_string)
+        logger.warning(f"{db_name}: Could not match phenotypes annotations for the following:\n" + failed_phenotype_matches_string)
 
-    logger.success("Added CARD annotations to the PanRes ontology.")
+    logger.success(f"Added {db_name} annotations to the PanRes ontology.")

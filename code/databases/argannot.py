@@ -24,8 +24,8 @@ acr2class = {
     'Col': 'Colistin'
 }
 
-def add_argannot_annotations(onto, logger):
-    matched_genes = find_genes_from_database(onto, database_name='ARGANNOT')
+def add_argannot_annotations(onto: Ontology, logger, db_name: str = 'ARGANNOT'):
+    matched_genes = find_genes_from_database(onto, database_name=db_name)
 
     failed_regex_matches = list()
     failed_ab_matches = defaultdict(list)
@@ -33,12 +33,12 @@ def add_argannot_annotations(onto, logger):
     p = re.compile(r"\|\((\w{3,4})\)")
 
     for gene, og in matched_genes.items():
-        fasta_header = [fh for fh in og.original_fasta_header if 'ARGANNOT' in fh][0]
+        fasta_header = [fh for fh in og.original_fasta_header if db_name in fh][0]
         m = p.findall(fasta_header)
         ab_acronym = m[0] if m else None
         if ab_acronym is not None and ab_acronym in acr2class.keys():
             ab = acr2class[ab_acronym].title()
-            success_match = gene_target(gene, og, target=ab, onto=onto)
+            success_match = gene_target(gene, og, target=ab, onto=onto, db_name=db_name)
             if not success_match:
                 failed_ab_matches[ab].append(f"{gene.name} ({og.name})")
         else:
@@ -46,10 +46,10 @@ def add_argannot_annotations(onto, logger):
         
     
     if len(failed_regex_matches) > 0:
-        logger.warning(f"ARGANNOT: Failed to extract class acronyms: {', '.join(failed_regex_matches)}")    
+        logger.warning(f"{db_name}: Failed to extract class acronyms: {', '.join(failed_regex_matches)}")    
 
     if len(failed_ab_matches) > 0:
         failed_ab_matches_string = "\n".join([f"{k}: {', '.join(v)}" for k, v in failed_ab_matches.items()])
-        logger.warning("ARGANNOT: Failed to find target annotations for:\n" + failed_ab_matches_string)
+        logger.warning("{db_name}: Failed to find target annotations for:\n" + failed_ab_matches_string)
     
-    logger.success("Added ARG-ANNOT annotations to the PanRes ontology.")
+    logger.success(f"Added {db_name} annotations to the PanRes ontology.")

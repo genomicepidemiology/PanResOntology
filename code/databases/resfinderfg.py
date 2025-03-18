@@ -36,7 +36,7 @@ fg2class = {
     'KAN': 'Kanamycin'
 }
 
-def add_resfinderfg_annotations(file, onto, logger):
+def add_resfinderfg_annotations(file: str, onto: Ontology, logger, db_name: str = 'ResFinderFG'):
     
     with open(file, 'r') as f:
         lines = [l.strip() for l in f.readlines()]
@@ -47,21 +47,22 @@ def add_resfinderfg_annotations(file, onto, logger):
 
     failed_acronym_matches = defaultdict(list)
 
-    matched_genes = find_genes_from_database(onto, database_name='ResFinderFG')
+    matched_genes = find_genes_from_database(onto, database_name=db_name)
     for gene, og in matched_genes.items():
-        fasta_header = og.original_fasta_header[0].replace("|ResFinderFG", "")
+        fasta_header = og.original_fasta_header[0].replace(f"|{db_name}", "")
         ab_class_acronym = fasta_header.split('|')[-1]
         ab_class_name = fg2class.get(ab_class_acronym, ab_class_acronym).title()
 
         dna_acc = fasta_header.split('|')[1]
-        gene.dna_accession.append(dna_acc)
+        gene.accession.append(dna_acc)
+        og.accession.append(dna_acc)
 
-        success_match = gene_target(gene, og, target=ab_class_name, onto=onto)
+        success_match = gene_target(gene, og, target=ab_class_name, onto=onto, db_name=db_name)
         if not success_match:
             failed_acronym_matches[ab_class_acronym].append(f"{gene.name} ({og.name})")
         
     if len(failed_acronym_matches) > 0:
         failed_acronym_matches_string = "\n".join([f"{k}: {','.join(v)}" for k,v in failed_acronym_matches.items()])
-        logger.warning("ResFinderFG: Failed to find acronym translations for:\n" + failed_acronym_matches_string)
+        logger.warning(f"{db_name}: Failed to find acronym translations for:\n" + failed_acronym_matches_string)
     
-    logger.success("Added ResFinderFG annotations to the PanRes ontology.")
+    logger.success(f"Added {db_name} annotations to the PanRes ontology.")

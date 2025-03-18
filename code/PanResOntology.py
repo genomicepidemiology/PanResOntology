@@ -1,6 +1,6 @@
-from owlready2 import get_ontology, sync_reasoner
+from owlready2 import get_ontology, sync_reasoner, sync_reasoner_pellet
 import model
-from databases import panres, resfinder, resfinderfg, card, megares, amrfinderplus, argannot, metalres
+from databases import panres, resfinder, resfinderfg, card, megares, amrfinderplus, argannot, metalres, bacmet, csabapal
 from targets import *
 
 from loguru import logger
@@ -25,7 +25,7 @@ resfinder.add_resfinder_annotations("data/resfinder_db/phenotypes.txt", onto, lo
 
 card.add_card_annotations("data/aro_index.tsv", onto, logger=logger)
 
-megares.add_megares_annotations(onto, logger=logger)
+megares.add_megares_annotations(onto, logger=logger, mappingfile='data/megares_to_external_header_mappings_v3.00_kopi.csv')
 
 resfinderfg.add_resfinderfg_annotations("data/resfinderfg_anno.txt", onto, logger=logger)
 
@@ -35,12 +35,23 @@ argannot.add_argannot_annotations(onto, logger=logger)
 
 metalres.add_metalres_annotations(onto, logger=logger)
 
+bacmet.add_bacmet_annotations(onto, mappingfile='data/BacMet_EXP.704.mapping.txt', logger=logger)
+
+csabapal.add_csabapal_annotations(onto = onto, file='data/QSX_607_CsabaPal_metagenomics_metadata_final_notfiltered.csv', logger=logger)
 
 # Remove unusued classes of AntimicrobialResistanceClass and AntimicrobialResistancePhenotype 
-# remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistanceClass, property_name='has_resistance_class')
-# remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistancePhenotype, property_name='has_predicted_phenotype')
+# remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistanceClass, property_name='has_resistance_class', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistancePhenotype, property_name='has_predicted_phenotype', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Metal, property_name='has_predicted_phenotype', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Biocide, property_name='has_predicted_phenotype', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.BiocideClass, property_name='has_resistance_class', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.UnclassifiedResistance, property_name='has_predicted_phenotype', logger=logger)
 
+reclassify_genes(onto)
+
+logger.info("Syncing ontology reasonings..")
 sync_reasoner(debug=0, infer_property_values = True)
+# sync_reasoner_pellet(infer_property_values = False, infer_data_property_values = False, debug=0)
 
 # Save the ontology to a file
 ont_file = 'panres_v2.owl'

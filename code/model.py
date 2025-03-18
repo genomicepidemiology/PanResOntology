@@ -1,5 +1,6 @@
 from argparse import Namespace
-from owlready2 import AnnotationProperty, Thing, FunctionalProperty, ObjectProperty, Or
+from owlready2 import AnnotationProperty, Thing, FunctionalProperty, ObjectProperty, Or, AllDisjoint
+
 
 def createModel(onto):
     '''
@@ -25,8 +26,11 @@ def createModel(onto):
     # original gene names - those from the various databases
     class PanGene(Gene): 
         description = "This is a gene identifier that follows the pan_ naming scheme."
-    class OriginalGene(PanGene): 
+    class OriginalGene(Gene): 
         description = "This is the original name extracted from the fasta header for each individual gene."
+
+    # Need a disjoint relationship between PanGene and OriginalGene individuals
+    AllDisjoint([PanGene, OriginalGene])
 
     # Also working with databases - to trace where each gene is originally from
     class Database(Resistance): pass
@@ -68,6 +72,9 @@ def createModel(onto):
         description = "Genes are translated into proteins, which was added as a new component of the PanRes database in version 2.0."
 
     class PanProtein(Protein): pass
+    class OriginalProtein(PanProtein): pass
+
+
     '''
     Functional properties
     '''
@@ -101,6 +108,11 @@ def createModel(onto):
         range = [str]
         namespace = onto
 
+    class same_as(ObjectProperty):
+        domain = [PanGene]
+        range = [OriginalGene]
+        namespace = onto
+
     class gene_alt_name(OriginalGene >> str): 
         namespace = onto
 
@@ -108,11 +120,12 @@ def createModel(onto):
         domain = [Or([PanGene, OriginalGene])]
         range = [Or([AntibioticResistancePhenotype, Biocide, Metal, UnclassifiedResistance])]
         namespace = onto
+        class_property_type = ["some"]
     class has_resistance_class(ObjectProperty):
         domain = [Or([PanGene, OriginalGene])]
         range = [Or([AntibioticResistanceClass, BiocideClass, MetalClass, UnclassifiedResistanceClass])]
         namespace = onto
-
+        class_property_type = ["some"]
     class gene_translated_to_protein(Gene >> Protein):
         namespace = onto
 
@@ -122,7 +135,7 @@ def createModel(onto):
         namespace = onto
     class metal_symbol(Metal >> str):
         namespace = onto
-    class metal_commenent(Metal >> str):
+    class metal_comment(Metal >> str):
         namespace = onto
     class found_in(ObjectProperty):
         domain = [Or([AntibioticResistancePhenotype, Metal, Biocide, AntibioticResistanceClass, MetalClass, BiocideClass])]
@@ -133,23 +146,12 @@ def createModel(onto):
     Inferred relationships
     '''
 
-    class AntimicrobialResistanceGene(PanGene):
-        namespace = onto
-        equivalent_to = [
-            PanGene & 
-            Or([has_resistance_class.some(AntibioticResistanceClass), has_predicted_phenotype.some(AntibioticResistancePhenotype)])
-        ]
+    # class ResistanceGene(Gene):
+    #     equivalent_to = [
+    #         PanGene &
+    #         is_from_database.some(Database) 
+    #     ]
     
-    class BiocideesistanceGene(PanGene):
-        namespace = onto
-        equivalent_to = [
-            PanGene & 
-            has_resistance_class.some(Biocide) 
-        ]
-    
-    class MetalResistanceGene(PanGene):
-        namespace = onto
-        equivalent_to = [
-            PanGene & 
-            has_resistance_class.some(Metal) 
-        ]
+    class AntimicrobialResistanceGene(PanGene): pass
+    class BiocideResistanceGene(PanGene): pass
+    class MetalResistanceGene(PanGene): pass

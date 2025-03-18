@@ -1,6 +1,15 @@
 import pandas as pd
 from owlready2 import Thing, Ontology, destroy_entity
 from functions import get_or_create_subclass, get_instance
+import sys
+
+def _add_gene_types(onto: Ontology, parent_cls: Thing, class_type: Thing):
+
+    # get all resistance types
+    for class_instance in list(class_type.subclasses()):
+        class_name = class_instance.name.replace('_', '')
+        gene_class_instance = get_or_create_subclass(onto = onto, parent_cls=parent_cls, subclass_name=class_name + 'ResistanceGene')
+    return
 
 def load_targets(excelfile: str, onto: Ontology, logger=None):
 
@@ -31,6 +40,12 @@ def load_targets(excelfile: str, onto: Ontology, logger=None):
         except TypeError:
             pass
     
+    # _add_gene_types(
+    #     onto = onto, 
+    #     parent_cls = onto.AntimicrobialResistanceGene, 
+    #     class_type = onto.AntibioticResistanceClass
+    # )
+
     # Metals
     metals = pd.read_excel(excelfile, sheet_name='metals')#['Metal'].str.lower().str.title()
     metals[['symbol', 'note']] = metals[['symbol', 'note']].fillna('')
@@ -44,7 +59,7 @@ def load_targets(excelfile: str, onto: Ontology, logger=None):
         if len(row['symbol']) > 0:
             metal_instance.metal_symbol.append(row['symbol'])
         if len(row['note']) > 0:
-            metal_instance.metal_commenent.append(f"{row['Metal']} {row['note']}") 
+            metal_instance.metal_comment.append(f"{row['Metal']} {row['note']}") 
 
     # Metal
     biocides = pd.read_excel(excelfile, sheet_name='biocides')
@@ -104,7 +119,8 @@ def remove_unused_subclasses_with_property(onto: Ontology, parent_cls: Thing, pr
         logger.error(f"Parent class {parent_cls} is not defined in the ontology.")
         return
     
-    for subclass in parent_cls.subclasses():
+    all_classes = list(parent_cls.subclasses())
+    for subclass in all_classes:
         has_property = False
         for instance in onto.PanGene.instances():
             # Check if the subclass has the specified object property
@@ -119,7 +135,7 @@ def remove_unused_subclasses_with_property(onto: Ontology, parent_cls: Thing, pr
     for subclass in unused_subclasses:
         destroy_entity(subclass)
     
-    logger.info(f"Destroyed {len(unused_subclasses)} subclasses of {parent_cls.name}")
+    logger.info(f"Destroyed {len(unused_subclasses)}/{len(all_classes)} subclasses of {parent_cls.name}")
 
 
 def gene_target(gene: Thing, og: Thing, target: str, onto: Ontology, db_name: str = None):
@@ -143,10 +159,33 @@ def gene_target(gene: Thing, og: Thing, target: str, onto: Ontology, db_name: st
         return False
     
     # Check if the target is a phenotype
-    if onto.AntibioticResistancePhenotype in target_instance.is_a or onto.Metal in target_instance.is_a or onto.Biocide in target_instance.is_a or onto.UnclassifiedResistance in target_instance.is_a:
+    type_check = {
+        'phenotype': any(
+            [
+                onto.AntibioticResistancePhenotype in target_instance.is_a, 
+                onto.Metal in target_instance.is_a, 
+                onto.Biocide in target_instance.is_a, 
+                onto.UnclassifiedResistance in target_instance.is_a
+                ]
+        ),
+        'class': any(
+            [
+                onto.AntibioticResistanceClass in target_instance.is_a,
+                onto.BiocideClass in target_instance.is_a,
+                onto.MetalClass in target_instance.is_a,
+                onto.UnclassifiedResistanceClass in target_instance.is_a
+            ]
+        )
+    }
+    if type_check['phenotype']: #any([onto.AntibioticResistancePhenotype in target_instance.is_a, onto.Metal in target_instance.is_a,  onto.Biocide in target_instance.is_a, onto.UnclassifiedResistance in target_instance.is_a]):
         gene.has_predicted_phenotype.append(target_instance)
         og.has_predicted_phenotype.append(target_instance)
-    elif onto.AntibioticResistanceClass in target_instance.is_a or onto.BiocideClass in target_instance.is_a or onto.UnclassifiedResistanceClass in target_instance.is_a:
+
+        for target_relation in target_instance.is_a:
+            if any([onto.AntibioticResistanceClass in target_relation.is_a, onto.BiocideClass in target_relation.is_a]):
+                gene.has_resistance_class.append(target_relation)
+                og.has_resistance_class.append(target_relation)
+    elif type_check['class']: #onto.AntibioticResistanceClass in target_instance.is_a or onto.BiocideClass in target_instance.is_a or onto.UnclassifiedResistanceClass in target_instance.is_a:
         gene.has_resistance_class.append(target_instance)
         og.has_resistance_class.append(target_instance)
     else:
@@ -159,3 +198,18 @@ def gene_target(gene: Thing, og: Thing, target: str, onto: Ontology, db_name: st
         pass
     
     return True
+
+def reclassify_genes(onto: Ontology):
+
+    for gene in onto.search(type=onto.PanGene):
+        phenotypes = list(set(gene.has_predicted_phenotype))
+        classes = list(set(gene.has_resistance_class))
+        
+        if any([rt in ph.is_a for ph in phenotypes + classes for rt in [onto.AntibioticResistanceClass, onto.AntibioticResistancePhenotype]]):
+            gene.is_a.append(onto.AntimicrobialResistanceGene)
+
+        if any([rt in ph.is_a for ph in phenotypes + classes for rt in [onto.BiocideClass, onto.Biocide]]):
+            gene.is_a.append(onto.BiocideResistanceGene)
+
+        if any([rt in ph.is_a for ph in phenotypes + classes for rt in [onto.MetalClass, onto.Metal]]):
+            gene.is_a.append(onto.MetalResistanceGene)

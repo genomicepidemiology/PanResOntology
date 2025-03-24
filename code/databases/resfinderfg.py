@@ -26,6 +26,20 @@ from targets import gene_target
 #       - AXCL: Amoxicillin + Clavulanate (Clavulanic acid)
 # KAN: pan_2197 (KY705354.1)
 #   - KY705354.1 = clone UTC-KAN-K1-CONTIG-B
+# CEF: pan_11851 (KM113772.1),pan_7473 (KM113767.1),pan_8469 (KM113770.1),pan_13710 (KM113771.1),pan_9978 (KM113768.1),pan_13450 (KM113773.1)
+#   - KM113767, KM113768, KM113770, KM113771, KM113772, KM113773 - all from the same study PUBMED 25288759.
+#       - KM113769 not in ResFinderFG?
+# SDX: pan_10206 (KS307999.1),pan_9587 (KS307948.1), pan_12812 (KS307981.1)
+#   - SUL: sulfadimethoxine 
+# STX: pan_11836 (MK159021.1),pan_13458 (MK159019.1)
+# SPT: pan_11835 (JN625762.1),pan_13997 (MN340016.1)
+#   -  spectinomycin
+# MEM: pan_10205 (KY705336.1),pan_10208 (KY705337.1)
+#   - meropenem
+# TZB: pan_12801 (KX125600.1)
+#   - Tazobactam
+# STR: pan_9976 (JX875573.1)
+# ERY: pan_10870 (KY705334.1)
 
 fg2class = {
     'SMZ': 'Sulfamethazine',
@@ -33,7 +47,15 @@ fg2class = {
     'AZM': 'Azithromycin',
     'CHL': 'Chloramphenicol',
     'AMC': 'Amoxicillin+Clavulanic acid',
-    'KAN': 'Kanamycin'
+    'KAN': 'Kanamycin',
+    'TZP': 'Piperacillin+Tazobactam',
+    'CEP': 'Cephalothin',
+    'SDX': 'Sulfadimethoxine',
+    'SPT': 'Spectinomycin',
+    'MEM': 'Meropenem',
+    'TZB': 'Tazobactam',
+    'ERY': 'Erythromycin' 
+
 }
 
 def add_resfinderfg_annotations(file: str, onto: Ontology, logger, db_name: str = 'ResFinderFG'):

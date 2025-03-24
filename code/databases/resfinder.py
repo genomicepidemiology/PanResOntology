@@ -17,6 +17,8 @@ agg_funcs = {
     'Mechanism of resistance': lambda x: ', '.join(x.unique()),
 }
 
+class2class = {'Ionophores': 'Ionophore'}
+
 def add_resfinder_annotations(file: str, onto: Ontology, logger, db_name: str = 'ResFinder'):
     resfinder_annotations = pd.read_csv(file, sep='\t')
     resfinder_annotations['Gene_accession no.'] = resfinder_annotations['Gene_accession no.'].str.replace("'", "")
@@ -42,7 +44,7 @@ def add_resfinder_annotations(file: str, onto: Ontology, logger, db_name: str = 
 
         for ab_class in ab_classes.split(','):
             ab_class = ab_class.strip()
-            success_match = gene_target(gene, og, target=ab_class, onto=onto, db_name=db_name)
+            success_match = gene_target(gene, og, target=class2class.get(ab_class,ab_class), onto=onto, db_name=db_name)
             if not success_match:
                 failed_class_matches[ab_class].append(f"{gene.name} ({og.name})")
 

@@ -28,6 +28,8 @@ def load_targets(excelfile: str, onto: Ontology, logger=None):
             subclass_name=row['class']
         )
 
+        if row['drug'] == row['class']:
+            continue
         # Add or get phenotype
         ab_phenotype_instance = get_or_create_subclass(
             onto = onto,
@@ -66,19 +68,24 @@ def load_targets(excelfile: str, onto: Ontology, logger=None):
     biocides['Biocide'] = biocides['Biocide'].str.strip().str.lower().str.title()
     biocides['Class'] = biocides['Class'].str.strip().str.lower().str.title()
     for _, row in biocides.iterrows():
+        biocide_class_instance = get_or_create_subclass(
+            onto = onto,
+            parent_cls = onto.BiocideClass,
+            subclass_name = row['Class']
+        )
+        
+        if row['Class'] == row['Biocide']:
+            continue
+        
         biocide_instance = get_or_create_subclass(
             onto = onto,
             parent_cls = onto.Biocide,
             subclass_name = row['Biocide']
         )
 
-        biocide_class_instance = get_or_create_subclass(
-            onto = onto,
-            parent_cls = onto.BiocideClass,
-            subclass_name = row['Class']
-        )
 
         biocide_instance.is_a.append(biocide_class_instance)
+
 
     # Unclassified
     unclassified = pd.read_excel(excelfile, sheet_name='unclassified')

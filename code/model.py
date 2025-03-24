@@ -1,4 +1,5 @@
 from argparse import Namespace
+from git import Object
 from owlready2 import AnnotationProperty, Thing, FunctionalProperty, ObjectProperty, Or, AllDisjoint
 
 
@@ -28,6 +29,8 @@ def createModel(onto):
         description = "This is a gene identifier that follows the pan_ naming scheme."
     class OriginalGene(Gene): 
         description = "This is the original name extracted from the fasta header for each individual gene."
+
+    class PanGeneCluster(Gene): pass
 
     # Need a disjoint relationship between PanGene and OriginalGene individuals
     AllDisjoint([PanGene, OriginalGene])
@@ -73,7 +76,7 @@ def createModel(onto):
 
     class PanProtein(Protein): pass
     class OriginalProtein(PanProtein): pass
-
+    class PanProteinCluster(Protein): pass
 
     '''
     Functional properties
@@ -102,6 +105,11 @@ def createModel(onto):
         domain = [Or([PanGene, OriginalGene])]
         range = [Database]
         namespace = onto
+    
+    class member_of(ObjectProperty):
+        domain = [Or([PanGene, PanProtein])]
+        range = [Or([PanGeneCluster, PanProteinCluster])]
+        namespace = onto
 
     class original_fasta_header(AnnotationProperty):
         domain = [OriginalGene] 
@@ -126,9 +134,10 @@ def createModel(onto):
         range = [Or([AntibioticResistanceClass, BiocideClass, MetalClass, UnclassifiedResistanceClass])]
         namespace = onto
         class_property_type = ["some"]
-    class gene_translated_to_protein(Gene >> Protein):
+    class translates_to(ObjectProperty): #(Gene >> Protein):
+        domain = [PanGeneCluster]
+        range = [Protein]
         namespace = onto
-
     class is_drug_combination(AnnotationProperty): #(AntibioticResistancePhenotype >> bool): 
         domain = [Or([AntibioticResistancePhenotype, Metal, Biocide])]
         range = [bool]
@@ -142,16 +151,6 @@ def createModel(onto):
         range = [Database]
         namespace = onto
 
-    '''
-    Inferred relationships
-    '''
-
-    # class ResistanceGene(Gene):
-    #     equivalent_to = [
-    #         PanGene &
-    #         is_from_database.some(Database) 
-    #     ]
-    
     class AntimicrobialResistanceGene(PanGene): pass
     class BiocideResistanceGene(PanGene): pass
     class MetalResistanceGene(PanGene): pass

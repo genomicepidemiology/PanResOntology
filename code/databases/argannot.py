@@ -37,10 +37,11 @@ def add_argannot_annotations(onto: Ontology, logger, db_name: str = 'ARGANNOT'):
         m = p.findall(fasta_header)
         ab_acronym = m[0] if m else None
         if ab_acronym is not None and ab_acronym in acr2class.keys():
-            ab = acr2class[ab_acronym].title()
-            success_match = gene_target(gene, og, target=ab, onto=onto, db_name=db_name)
-            if not success_match:
-                failed_ab_matches[ab].append(f"{gene.name} ({og.name})")
+            antibiotics = acr2class[ab_acronym].title()
+            for ab in antibiotics.split('/'):
+                success_match = gene_target(gene, og, target=ab, onto=onto, db_name=db_name)
+                if not success_match:
+                    failed_ab_matches[ab].append(f"{gene.name} ({og.name})")
         else:
             failed_regex_matches.append(f"{gene.name} ({og.name})")
         

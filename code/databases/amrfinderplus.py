@@ -12,6 +12,8 @@ agg_funcs = {
     'class': lambda x: '/'.join(x.unique())
 }
 
+compound2compound = {'Quaternary Ammonium': 'Quaternary Ammonium Compounds (QACs)'}
+
 def add_amrfinderplus_annotations(file: str, onto: Ontology, logger, db_name: str = 'AMRFinderPlus'):
     amrfinderplus_anno = pd.read_csv(file, sep='\t')
     string_columns = amrfinderplus_anno.select_dtypes(include='object').columns
@@ -35,7 +37,7 @@ def add_amrfinderplus_annotations(file: str, onto: Ontology, logger, db_name: st
 
         ab_classes = m['class'].item().split('/')
         for ab_class in ab_classes:
-            ab_class = ab_class.title()
+            ab_class = compound2compound.get(ab_class.title(), ab_class.title())
             success_match = gene_target(gene, og, target=ab_class, onto=onto, db_name=db_name)
             if not success_match:
                 failed_ab_matches[ab_class] = f"{gene.name} ({og.name})"

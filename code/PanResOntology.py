@@ -1,3 +1,4 @@
+from math import log
 from owlready2 import get_ontology, sync_reasoner, sync_reasoner_pellet
 import model
 from databases import panres, resfinder, resfinderfg, card, megares, amrfinderplus, argannot, metalres, bacmet, csabapal
@@ -20,27 +21,38 @@ load_targets(excelfile='data/targets.xlsx', onto=onto, logger=logger)
 # Load into data from first version of PanRes
 panres.add_panres_genes("data/PanRes_data_v1.0.0.tsv", onto, logger)
 
+## add proteins
+panres.add_panres_proteins(file = 'data/proteins/panres_final_protein.faa', clstrs='data/proteins/panres_final_protein_50_90.faa.clstr', onto = onto, logger = logger)
+
 # Load data about ResFinder genes
 resfinder.add_resfinder_annotations("data/resfinder_db/phenotypes.txt", onto, logger=logger)
 
+# Load data about CARD genes
 card.add_card_annotations("data/aro_index.tsv", onto, logger=logger)
 
+# Load data about MegaRes genes
 megares.add_megares_annotations(onto, logger=logger, mappingfile='data/megares_to_external_header_mappings_v3.00_kopi.csv')
 
+# Load data about ResFinderFG genes
 resfinderfg.add_resfinderfg_annotations("data/resfinderfg_anno.txt", onto, logger=logger)
 
+# Load data about AMRFinderPlus genes
 amrfinderplus.add_amrfinderplus_annotations("data/ReferenceGeneCatalog.txt", onto, logger=logger)
 
+# Load data about ARGANNOT genes
 argannot.add_argannot_annotations(onto, logger=logger)
 
+# Load data about MetalRes genes
 metalres.add_metalres_annotations(onto, logger=logger)
 
+# Load data about BacMet genes
 bacmet.add_bacmet_annotations(onto, mappingfile='data/BacMet_EXP.704.mapping.txt', logger=logger)
 
+# Load data about CsabaPal genes
 csabapal.add_csabapal_annotations(onto = onto, file='data/QSX_607_CsabaPal_metagenomics_metadata_final_notfiltered.csv', logger=logger)
 
 # Remove unusued classes of AntimicrobialResistanceClass and AntimicrobialResistancePhenotype 
-# remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistanceClass, property_name='has_resistance_class', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistanceClass, property_name='has_resistance_class', logger=logger)
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.AntibioticResistancePhenotype, property_name='has_predicted_phenotype', logger=logger)
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Metal, property_name='has_predicted_phenotype', logger=logger)
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Biocide, property_name='has_predicted_phenotype', logger=logger)

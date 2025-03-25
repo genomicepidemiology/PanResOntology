@@ -59,7 +59,21 @@ fg2class = {
 }
 
 def add_resfinderfg_annotations(file: str, onto: Ontology, logger, db_name: str = 'ResFinderFG'):
+    """Add ResFinderFG annotations to the ontology.
+
+    Parameters
+    ----------
+    file : str
+        Path to the file containing ResFinderFG annotations
+    onto : Ontology
+        The ontology object to which annotations will be added
+    logger : loguru.logger
+        Logger object for logging messages.
+    db_name : str, optional
+        Name of the database, by default 'ResFinderFG'
+    """
     
+    # Load the annotations by parsing the text file
     with open(file, 'r') as f:
         lines = [l.strip() for l in f.readlines()]
     for l in lines:
@@ -67,24 +81,34 @@ def add_resfinderfg_annotations(file: str, onto: Ontology, logger, db_name: str 
         if len(ll) == 2:
             fg2class[ll[0].strip()]=ll[1].strip()
 
+    # Lists for storing failed acronym matches
     failed_acronym_matches = defaultdict(list)
-
+    
+    # Find genes from the specified database in the ontology
     matched_genes = find_genes_from_database(onto, database_name=db_name)
+    
+    # Loop through each matched gene and add annotations
     for gene, og in matched_genes.items():
+        # Extract and clean the fasta header for the current gene
         fasta_header = og.original_fasta_header[0].replace(f"|{db_name}", "")
         ab_class_acronym = fasta_header.split('|')[-1]
         ab_class_name = fg2class.get(ab_class_acronym, ab_class_acronym).title()
 
+        # Add resistance links
+        success_match = gene_target(gene, og, target=ab_class_name, onto=onto, db_name=db_name)
+        # log if no match
+        if not success_match:
+            failed_acronym_matches[ab_class_acronym].append(f"{gene.name} ({og.name})")
+
+        # Add accession numbers
         dna_acc = fasta_header.split('|')[1]
         gene.accession.append(dna_acc)
         og.accession.append(dna_acc)
-
-        success_match = gene_target(gene, og, target=ab_class_name, onto=onto, db_name=db_name)
-        if not success_match:
-            failed_acronym_matches[ab_class_acronym].append(f"{gene.name} ({og.name})")
-        
+    
+    # Output logging messages for any failed matches
     if len(failed_acronym_matches) > 0:
         failed_acronym_matches_string = "\n".join([f"{k}: {','.join(v)}" for k,v in failed_acronym_matches.items()])
         logger.warning(f"{db_name}: Failed to find acronym translations for:\n" + failed_acronym_matches_string)
     
+    # Log the successful addition of annotations
     logger.success(f"Added {db_name} annotations to the PanRes ontology.")

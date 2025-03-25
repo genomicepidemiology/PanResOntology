@@ -207,3 +207,98 @@ def accession_to_pubmed(accession: str) -> list:
         return p.stdout.decode().strip().split()
     
     return None
+
+def get_subclasses(onto: Thing, class_name: str) -> pd.DataFrame: 
+    """Find subclasses of an Ontology class
+
+    Parameters
+    ----------
+    onto : Thing
+        The loaded ontology to query
+    class_name : str
+        Subclasses of class_name to find
+
+    Returns
+    -------
+    pd.DataFrame
+        Column containing subclass matches of the class_name
+    """
+    class_match = onto.search_one(iri=f"*{class_name}")
+    subclasses = [sc.name for sc in list(class_match.subclasses())]
+    
+    return pd.DataFrame([class_match.name] + subclasses, columns=['match'])
+
+def class_to_genes(onto: Thing, class_instance: Thing, annotation_property: Thing) -> list:
+    """Find the Pan genes that are linked by the annotation_property to the class instance
+
+    Parameters
+    ----------
+    onto : Thing
+        The loaded ontology to query
+    class_instance : Thing
+        The class instance to match for
+    annotation_property : Thing
+        The annotaiton property that should link the pangene to the class instance
+
+    Returns
+    -------
+    list
+        list of pan genes matched
+    """
+    
+    pan_instances = pd.DataFrame(onto.PanGene.instances(), columns=['instance'])
+    pan_instances['has_resistance_to_class'] = pan_instances['instance'].apply(
+        lambda x: class_instance in annotation_property[x]
+    )
+    pan_instances = pan_instances.loc[
+        pan_instances.has_resistance_to_class == True,
+    ].drop(columns='has_resistance_to_class').values.tolist()  
+    return pan_instances
+
+def summarise_classes(onto: Ontology, class_name: str) -> pd.DataFrame:
+    """Summarise children of an ontology class and the genes associated with the class.
+
+    Parameters
+    ----------
+    onto : Ontology
+        The loaded ontology to query.
+    class_name : str
+        The name of the ontology class in question
+
+    Returns
+    -------
+    pd.DataFrame
+        Return a pandas DataFrame that shows the class names, 
+        class types of the match and the children, 
+        and the number of genes.
+    """
+    subclasses = get_subclasses(onto, class_name)
+    subclasses['instance'] = [onto.search_one(iri=f"*{c}") for c in subclasses.iloc[:, 0]]
+    subclasses['type'] = subclasses['instance'].apply(lambda x: x.is_a[0].name)
+    subclasses['n_genes'] = 0
+    
+    if any(subclasses['type'].str.endswith('Class')):
+        annotation_property = onto.has_resistance_class
+        
+        subclasses.loc[
+            subclasses['type'].str.endswith('Class'), 'n_genes'
+        ] = subclasses.loc[
+            subclasses['type'].str.endswith('Class'), 'instance'
+        ].apply(
+            lambda x: class_to_genes(class_instance = x, annotation_property = annotation_property)
+        ).apply(len)
+        
+        
+    if any(subclasses['type'].str.endswith('Phenotype')):
+        annotation_property = onto.has_predicted_phenotype
+    
+        subclasses.loc[
+            subclasses['type'].str.endswith('Phenotype'), 'n_genes'
+        ] = subclasses.loc[
+            subclasses['type'].str.endswith('Phenotype'), 'instance'
+        ].apply(
+            lambda x: class_to_genes(class_instance = x, annotation_property = annotation_property)
+        ).apply(len)
+        
+    
+    return subclasses.drop(columns=['instance']).rename(columns = {'match': 'Class'})

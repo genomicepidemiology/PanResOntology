@@ -1,17 +1,51 @@
 import subprocess
-from numpy import full
 from owlready2 import *
 import pandas as pd
 
-def get_instance(onto, name):
-    # instance = onto.search_one(iri="*{}".format(name))
+def get_instance(onto: Ontology, name: str) -> Thing:
+    """Retrieves an instance from the ontology based on its name
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology object
+    name : str
+        The name of the instance to retrieve
+
+    Returns
+    -------
+    Thing
+        The instance if found, otherwise None
+    """
+
+    # Clean the name by replacing spaces and hyphens with underscores
     cleaned_name = name.replace(" ", "_").replace("-", "_")
+
+    # Construct the full IRI for the instance
     full_iri = onto.base_iri + cleaned_name
+
+    # Search for the instance
     instance = onto.search_one(iri = full_iri)
     return instance
 
-# Function to get or create an instance
+
 def get_or_create_instance(onto: Ontology, cls: Thing, name: str) -> Thing:
+    """Retrieves or creates an instance in the ontology
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology object
+    cls : Thing
+        The class of hte instance to create
+    name : str
+        The name of the instance
+
+    Returns
+    -------
+    Thing
+        The instance
+    """ 
     
     # Construct the full IRI for the instance
     full_iri = onto.base_iri + name
@@ -25,10 +59,27 @@ def get_or_create_instance(onto: Ontology, cls: Thing, name: str) -> Thing:
     return instance
 
 def get_or_create_subclass(onto: Ontology, parent_cls: Thing, subclass_name: str) -> Thing:
+    """Retrieves or creates a subclass in the ontology
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology object
+    parent_cls : Thing
+        The parent class of the subclass.
+    subclass_name : str
+        The name of the subclass.
+
+    Returns
+    -------
+    Thing
+        The subclass
+    """
     
-    # Remove spaces
+    # Clean the subclass name by replacing spaces and hyphens with underscores
     cleaned_name = subclass_name.replace(" ", "_").replace("-", "_")
 
+    # Search for the subclass in the ontology
     subclass_instance = onto.search_one(iri = onto.base_iri + cleaned_name)
     
     # Create if it doesnt exist
@@ -41,14 +92,45 @@ def get_or_create_subclass(onto: Ontology, parent_cls: Thing, subclass_name: str
     return subclass_instance
 
 
-def find_original_name(gene_instance, database_name):
+def find_original_name(gene_instance: Thing, database_name: str) -> Thing:
+    """
+    Finds the original name of a gene instance from a specific database.
+
+    Parameters
+    ----------
+    gene_instance : Thing
+        The gene instance.
+    database_name : str
+        The name of the database.
+
+    Returns
+    -------
+    Thing
+        The original gene instance if found, otherwise None.
+    """
     # Check if the gene has an original name
     for og in gene_instance.same_as:
         for ogname in og.is_from_database:
             if ogname.name == database_name:
                 return og
 
-def find_genes_from_database(onto, database_name):    
+def find_genes_from_database(onto: Ontology, database_name: str) -> dict:    
+    """
+    Finds genes from a specific database in the ontology
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology object
+    database_name : str
+        The name of the database
+
+    Returns
+    -------
+    dict
+        A dictionary mapping genes to their original gene instances.
+    """
+
     # Search for the database instance
     database_instance = onto.search_one(iri="*{}".format(database_name))
     
@@ -59,13 +141,32 @@ def find_genes_from_database(onto, database_name):
     # Find all genes associated with the database
     genes = [gene for gene in onto.PanGene.instances() if database_instance in gene.is_from_database and onto.PanGene in gene.is_a]
 
+    # Map genes to their original gene instances
     gene2og = {gene: find_original_name(gene, database_name) for gene in genes}
     return gene2og
 
-def clean_gene_name(gene_name, db):
+def clean_gene_name(gene_name: str, db: str) -> str:
+    """Cleans the gene name based on the database.
+
+    Parameters
+    ----------
+    gene_name : str
+        The gene name to clean.
+    db : str
+        The name of the database the gene name is from.
+
+    Returns
+    -------
+    str
+        The cleaned gene name.
+    """
+    
+    # Remove database prefix from the gene name
     gene_name = gene_name.replace(db + '|','')
     db = db.lower()
-    if db == 'amrfinderplus': #in ['amrfinderplus', 'card_amr']:
+    
+    # Clean the gene name based on the database
+    if db == 'amrfinderplus': 
         return gene_name.split('|')[5]
     elif db == 'card_amr':
         return gene_name.split('|')[5].split(' [')[0]
@@ -79,53 +180,29 @@ def clean_gene_name(gene_name, db):
         return gene_name.split(' ')[0]
     else:
         return gene_name    
-    
-def check_targets(excelfile):
-    antibiotics = pd.read_excel(excelfile, sheet_name='antibiotic')
-    antibiotics['drug'] = antibiotics['drug'].str.strip().str.title()
-    to_drop = [c for c in antibiotics.columns if c.startswith('Unnamed')]
-    antibiotics['group'] = antibiotics['group'].str.replace(r's$', '', regex=True)
-    antibiotics['class'] = antibiotics['class'].str.strip().str.title()
 
-    metals = pd.read_excel(excelfile, sheet_name='metals')['Metal'].str.lower().str.title()
-    biocides = pd.read_excel(excelfile, sheet_name='biocides')['Biocide'].str.lower().str.title()
+def accession_to_pubmed(accession: str) -> list:
+    """
+    Retrieves PubMed IDs associated with a protein or gene accession
 
-    return {
-        'antibiotics': antibiotics.drop(columns=to_drop), 
-        'metals': metals.values.tolist(),
-        'biocides': biocides.values.tolist()
-    }
+    Parameters
+    ----------
+    accession : str
+        The protein accession
 
-def find_target_annotation(target,annotated_targets):
+    Returns
+    -------
+    list
+        A list of PubMed IDs
+    """
 
-    antibiotics = annotated_targets['antibiotics']
-    drug_match = antibiotics['drug'] == target
-    if drug_match.any():
-        return 'antibiotic', antibiotics.loc[drug_match, ]
-    
-    class_match = antibiotics['class'] == target
-    if class_match.any():
-        return 'antibiotic_class', antibiotics.loc[class_match]
-
-    subclass_match = antibiotics['group'] == target
-    if subclass_match.any():
-        return 'antibiotic_subclass', antibiotics.loc[subclass_match]
-    
-
-    metals = annotated_targets['metals']
-    if target in metals:
-        return ('metal', target)
-
-    biocides = annotated_targets['biocides']
-    if target in biocides:
-        return ('biocide', target)
-    
-
-def accession_to_pubmed(accession: str):
-
+    # Construct the command to retrieve PubMed IDs
     cmd = f"esearch -db protein -query {accession} | elink -target pubmed | efetch -format uid"
-    p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
+    # Run the command
+    p = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    
+    # Check if the command was successful
     if p.returncode == 0:
         return p.stdout.decode().strip().split()
     

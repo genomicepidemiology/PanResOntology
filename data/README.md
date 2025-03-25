@@ -8,6 +8,7 @@ Phenotypes for ResFinder genes retrieved from: https://bitbucket.org/genomicepid
 
 ## ResFinderFG
 The acronyms for the ResFinderFG genes are translated both with a manual lookup of the pubmed IDs, as well as using the file retrieved like this:
+
 ```
 wget https://bitbucket.org/genomicepidemiology/resfinderfg_db/raw/cec72dd864faa11ae1301354cecd6cb71880c593/additional_info.txt
 mv additional_info.txt resfinderfg_anno.txt

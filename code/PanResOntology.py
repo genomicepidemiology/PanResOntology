@@ -1,11 +1,9 @@
-from math import log
-from owlready2 import get_ontology, sync_reasoner, sync_reasoner_pellet
+from owlready2 import get_ontology, sync_reasoner
 import model
 from databases import panres, resfinder, resfinderfg, card, megares, amrfinderplus, argannot, metalres, bacmet, csabapal
 from targets import *
 
 from loguru import logger
-import sys  
 
 logger.add("panres_messages.log")
 
@@ -66,6 +64,6 @@ sync_reasoner(debug=0, infer_property_values = True)
 # sync_reasoner_pellet(infer_property_values = False, infer_data_property_values = False, debug=0)
 
 # Save the ontology to a file
-ont_file = 'panres_v2.owl'
+ont_file = 'ontology/panres_v2.owl'
 onto.save(file=ont_file, format="rdfxml")
 logger.info(f"Saved ontology to file: {ont_file}.")

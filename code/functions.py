@@ -285,7 +285,7 @@ def summarise_classes(onto: Ontology, class_name: str) -> pd.DataFrame:
         ] = subclasses.loc[
             subclasses['type'].str.endswith('Class'), 'instance'
         ].apply(
-            lambda x: class_to_genes(class_instance = x, annotation_property = annotation_property)
+            lambda x: class_to_genes(onto = onto, class_instance = x, annotation_property = annotation_property)
         ).apply(len)
         
         
@@ -297,7 +297,7 @@ def summarise_classes(onto: Ontology, class_name: str) -> pd.DataFrame:
         ] = subclasses.loc[
             subclasses['type'].str.endswith('Phenotype'), 'instance'
         ].apply(
-            lambda x: class_to_genes(class_instance = x, annotation_property = annotation_property)
+            lambda x: class_to_genes(onto = onto, class_instance = x, annotation_property = annotation_property)
         ).apply(len)
         
     

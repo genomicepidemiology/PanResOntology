@@ -18,6 +18,7 @@ pandas==1.5.3
 numpy==1.24.3
 ```
 
+### Execute
 then run the script:
 ```
 python code/PanResOntology.py
@@ -28,3 +29,10 @@ which will produce the OWL file [panres_v2.owl](/ontology/panres_v2.owl).
 The module in [model.py](/code/model.py) defines the ontology schema for the PanRes database using `owlready2`. It includes classes for various types of resistance genes, databases, and resistance types, as well as functional properties to describe relationships and attributes.
 
 Extended documentation on the classes and properties are described in the [model.md](model.md) file.
+
+### Things to Implement
+- [ ] Correctly link gene to protein translations
+- [ ] Link PubMed IDs and accessions to all genes and proteins
+- [ ] Link protein structures to ontology
+- [ ] Setup schema for adding new information to the ontology
+- [ ] Review the "unclassified" classes of resistances and correctly place them.

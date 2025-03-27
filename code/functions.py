@@ -147,6 +147,29 @@ def find_genes_from_database(onto: Ontology, database_name: str) -> dict:
     gene2og = {gene: find_original_name(gene, database_name) for gene in genes}
     return gene2og
 
+def get_genes_from_database(onto: Ontology, database_name: str):
+    """Query the ontology for genes from a specific database
+
+    Parameters
+    ----------
+    onto : Ontology
+        The loaded ontology to query
+    database_name : str
+        Database name to match
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe of matched genes
+    """
+    
+    gene2og = find_genes_from_database(onto = onto, database_name = database_name)
+    
+    df = pd.DataFrame.from_dict(gene2og, orient='index', columns=[database_name])
+    df.index = [g.name for g in df.index]
+    df[database_name] = df[database_name].apply(lambda x: x.name)
+    return df
+
 def clean_gene_name(gene_name: str, db: str) -> str:
     """Cleans the gene name based on the database.
 
@@ -348,3 +371,33 @@ def visualize_specific_classes(onto: Ontology, class_names: list, output_file: s
     print(f"Visualization saved as {output_file}.png")
     
     display(Image(filename=output_file + '.png'))
+
+def get_genes_for_class(onto: Ontology, class_name: str) -> pd.DataFrame:
+    """Find  genes conferring resistance to a class or a phenotype
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology object
+    class_name : str
+        Name of class to search
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with pan gene names, classes and phenotypes
+    """
+    
+    # Get database instance
+    class_instance = onto.search(iri=f"*{class_name}")[0]
+    
+    # Get genes
+    genes = [
+        [gene.name, gene.has_resistance_class, gene.has_predicted_phenotype] 
+        for gene in onto.PanGene.instances() if class_instance in gene.has_resistance_class + gene.has_predicted_phenotype
+    ]
+    
+    df = pd.DataFrame(genes, columns = ['pan_gene', 'resistance_class', 'resistance_phenotype'])
+    df['resistance_class'] = df['resistance_class'].apply(lambda x: sorted([v.name for v in x]))
+    df['resistance_phenotype'] = df['resistance_phenotype'].apply(lambda x: sorted([v.name for v in x]))
+    return df

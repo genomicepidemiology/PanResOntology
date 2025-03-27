@@ -1,6 +1,8 @@
 import subprocess
 from owlready2 import *
 import pandas as pd
+from graphviz import Digraph
+from IPython.display import Image, display
 
 def get_instance(onto: Ontology, name: str) -> Thing:
     """Retrieves an instance from the ontology based on its name
@@ -302,3 +304,47 @@ def summarise_classes(onto: Ontology, class_name: str) -> pd.DataFrame:
         
     
     return subclasses.drop(columns=['instance']).rename(columns = {'match': 'Class'})
+
+def get_annotations_of_individual(individual: Thing):
+    """Get all annotations of an individual in the the ontology"""
+    return individual.get_annotations()
+
+def visualize_specific_classes(onto: Ontology, class_names: list, output_file: str ="specific_classes_visualization"):
+    """
+    Visualizes the relationship between specific classes in the given ontology using Graphviz.
+
+    Parameters
+    ----------
+    onto : Ontology
+        The ontology to visualize
+    class_names : list
+        A list of class names to visualize.
+    output_file : str, optional
+        Name of file to save the graph to, by default "specific_classes_visualization"
+
+    
+    Examples
+    ----------
+    >>> specific_classees = ["PanGene, "OriginalGene", "Database"]
+    >>> visualize_specific_classes(onto = onto, specific_classes)
+    """
+    dot = Digraph(comment='Specific Classes Visualization')
+    
+    def add_class_and_relationships(cls):
+        dot.node(cls.name, cls.name)
+        for parent in cls.is_a:
+            if isinstance(parent, owlready2.ThingClass):
+                dot.edge(parent.name, cls.name)
+                dot.node(parent.name, parent.name)
+    
+    # Add nodes and edges for specified classes
+    for class_name in class_names:
+        cls = onto[class_name]
+        add_class_and_relationships(cls)
+    
+    # Save and render the graph
+    dot.format = 'png'
+    dot.render(output_file, format='png', cleanup=True)
+    print(f"Visualization saved as {output_file}.png")
+    
+    display(Image(filename=output_file + '.png'))

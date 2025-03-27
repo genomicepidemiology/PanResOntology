@@ -1,7 +1,7 @@
 # PanRes Ontology
 This GitHub repository contains the "ontologisation" of the annotations for the genes and proteins part of the PanRes collection. 
 
-> The OWL file can be found in the [ontology](/ontology/) folder: [panres_v2.owl](/ontology/panres_v2.owl)
+**The OWL file can be found in the [ontology](/ontology/) folder: [panres_v2.owl](/ontology/panres_v2.owl)**
 
 ## Working With the Ontology
 There are a few examples of querying the PanRes ontology in the [notebooks folder](/notebooks), specifically the Jupyter Notebook [Queries.ipynb](/notebooks/Queries.ipynb).
@@ -28,11 +28,12 @@ which will produce the OWL file [panres_v2.owl](/ontology/panres_v2.owl).
 ## PanRes API Reference
 The module in [model.py](/code/model.py) defines the ontology schema for the PanRes database using `owlready2`. It includes classes for various types of resistance genes, databases, and resistance types, as well as functional properties to describe relationships and attributes.
 
-Extended documentation on the classes and properties are described in the [model.md](model.md) file.
+Extended documentation on the classes and properties are described in the [model.md](docs/model.md) file.
 
 ### Things to Implement
-- [ ] Correctly link gene to protein translations
-- [ ] Link PubMed IDs and accessions to all genes and proteins
-- [ ] Link protein structures to ontology
-- [ ] Setup schema for adding new information to the ontology
+- [ ] Finish the description of annotation properties in [model.md](docs/model.md).
+- [ ] Correctly link gene to protein translations.
+- [ ] Link PubMed IDs and accessions to all genes and proteins.
+- [ ] Link protein structures to ontology.
+- [ ] Setup schema for adding new information to the ontologyæ
 - [ ] Review the "unclassified" classes of resistances and correctly place them.

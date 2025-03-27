@@ -1,7 +1,7 @@
 # PanRes Ontology
 This GitHub repository contains the "ontologisation" of the annotations for the genes and proteins part of the PanRes collection. 
 
-The OWL file can be found in the [ontology](/ontology/) folder: [panres_v2.owl](/ontology/panres_v2.owl)
+> The OWL file can be found in the [ontology](/ontology/) folder: [panres_v2.owl](/ontology/panres_v2.owl)
 
 ## Working With the Ontology
 There are a few examples of querying the PanRes ontology in the [notebooks folder](/notebooks), specifically the Jupyter Notebook [Queries.ipynb](/notebooks/Queries.ipynb).

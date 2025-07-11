@@ -56,7 +56,6 @@ def createModel(onto):
     # Antibiotic resistance - class, phenotype, mechanism
     class AntibioticResistanceClass(AntibioticResistance): pass
     class AntibioticResistancePhenotype(AntibioticResistance): pass
-    class AntibioticResistanceMechanism(AntibioticResistance): pass
 
     # Metal resistance - metal
     class MetalClass(MetalResistance): pass
@@ -69,6 +68,9 @@ def createModel(onto):
     # Unclassified ?
     class UnclassifiedResistanceClass(ResistanceType): pass
     class UnclassifiedResistance(UnclassifiedResistanceClass): pass
+
+    class ResistanceMechanism(Resistance): pass
+    class AntibioticResistanceMechanism(ResistanceMechanism): pass
 
     # In PanRes 2.0, we are pivoting into proteins as well
     class Protein(Resistance):
@@ -130,8 +132,14 @@ def createModel(onto):
         namespace = onto
         class_property_type = ["some"]
     class has_resistance_class(ObjectProperty):
-        domain = [Or([PanGene, OriginalGene])]
+        domain = [Or([PanGene, OriginalGene, AntibioticResistancePhenotype])]
         range = [Or([AntibioticResistanceClass, BiocideClass, MetalClass, UnclassifiedResistanceClass])]
+        namespace = onto
+        class_property_type = ["some"]
+
+    class has_mechanism_of_resistance(ObjectProperty):
+        domain = [Or([PanGene, OriginalGene])]
+        range = [ResistanceMechanism]
         namespace = onto
         class_property_type = ["some"]
     class translates_to(ObjectProperty): #(Gene >> Protein):

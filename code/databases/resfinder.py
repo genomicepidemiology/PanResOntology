@@ -46,6 +46,7 @@ def add_resfinder_annotations(file: str, onto: Ontology, logger, db_name: str = 
     failed_matches = [] 
     failed_class_matches = defaultdict(list)
     failed_phenotype_matches = defaultdict(list)
+    failed_mechanism_matches = defaultdict(list)
 
     # Find genes from the specified database in the ontology
     matched_genes = find_genes_from_database(onto, database_name=db_name)
@@ -82,7 +83,17 @@ def add_resfinder_annotations(file: str, onto: Ontology, logger, db_name: str = 
             if not success_match:
                 failed_phenotype_matches[phenotype].append(f"{gene.name} ({og.name})")
         
-        # # Add DNA accession
+        # Get mechanisms of resistance and clean them
+        mechanisms = m['Mechanism of resistance'].item().split(',')
+        for mechanism in set(mechanisms):
+            mechanism = mechanism.strip().title()
+            success_match = gene_target(gene, og, target=mechanism, onto=onto, db_name=db_name)
+
+            # log if failed match
+            if not success_match:
+                failed_mechanism_matches[mechanism].append(f"{gene.name} ({og.name})")  
+
+        # Add DNA accession
         dna_acc = og.name.split('_')[-1].replace(f"|{db_name}", "")
         gene.accession.append(dna_acc)
         og.accession.append(dna_acc)
@@ -99,5 +110,10 @@ def add_resfinder_annotations(file: str, onto: Ontology, logger, db_name: str = 
         failed_phenotype_matches_string = "\n".join([f"{k}: {', '.join(v)}" for k,v in failed_phenotype_matches.items()])
         logger.warning(f"{db_name}: Failed to find phenotypes for the following annotations:\n" + failed_phenotype_matches_string)
     
+    if len(failed_mechanism_matches) > 0:
+        failed_mechanism_matches_string = "\n".join([f"{k}: {', '.join(v)}" for k,v in failed_mechanism_matches.items()])
+        logger.warning(f"{db_name}: Failed to find mechanisms for the following annotations:\n" + failed_mechanism_matches_string)
+    
+
     # Log the successful addition of annotations
     logger.success(f"Added {db_name} annotations to the PanRes ontology.")

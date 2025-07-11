@@ -17,9 +17,9 @@ logger.success("Created the ontology model.")
 load_targets(excelfile='data/targets.xlsx', onto=onto, logger=logger)
 
 # Load into data from first version of PanRes
-panres.add_panres_genes("data/PanRes_data_v1.0.0.tsv", onto, logger)
+panres.add_panres_genes("data/PanRes_data_v1.0.0.tsv", onto = onto, logger = logger, discarded='data/discarded/panres_removed_headers.txt')
 
-## add proteins
+# add proteins
 panres.add_panres_proteins(file = 'data/proteins/panres_final_protein.faa', clstrs='data/proteins/panres_final_protein_50_90.faa.clstr', onto = onto, logger = logger)
 
 # Load data about ResFinder genes
@@ -56,6 +56,7 @@ remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Metal, propert
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.Biocide, property_name='has_predicted_phenotype', logger=logger)
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.BiocideClass, property_name='has_resistance_class', logger=logger)
 remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.UnclassifiedResistance, property_name='has_predicted_phenotype', logger=logger)
+remove_unused_subclasses_with_property(onto=onto, parent_cls=onto.ResistanceMechanism, property_name='has_mechanism_of_resistance', logger=logger)
 
 reclassify_genes(onto)
 

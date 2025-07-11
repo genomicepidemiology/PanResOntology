@@ -1,3 +1,4 @@
+from turtle import left
 import pandas as pd
 from owlready2 import *
 import subprocess
@@ -7,6 +8,7 @@ import sys
 sys.path.append('..')
 from functions import get_instance, clean_gene_name, get_or_create_instance
 import re
+import os
 
 database2name = {
     'amrfinderplus': 'AMRFinderPlus',
@@ -19,7 +21,26 @@ database2name = {
     'resfinder': 'ResFinder'
 }
 
-def add_panres_genes(file: str, onto: Ontology, logger = logger):
+def discarded_genes(discarded_list: str):
+    """Read a list of discarded genes from a file and return them as a list.
+
+    Parameters
+    ----------
+    discarded_list : str
+        Path to the file containing the list of discarded genes.
+
+    Returns
+    -------
+    list
+        A list of discarded gene names.
+    """
+    
+    with open(discarded_list, 'r') as f:
+        discarded = [l.strip().split('_v')[0].replace('>', '') for l in f.readlines()]
+    
+    return discarded
+
+def add_panres_genes(file: str, onto: Ontology, discarded: str, logger = logger):
     """Add PanRes genes to the ontology
 
     Parameters
@@ -28,7 +49,9 @@ def add_panres_genes(file: str, onto: Ontology, logger = logger):
         File containing metadata for the genes included in the first version of PanRes
     onto : Ontology
         The Ontology to load the genes into
-    logger : _type_
+    discarded : str
+        File with gene names that have been discarded from the PanRes database, e.g. because their sequence didnt contain correct start and stop codons
+    logger : loguru.logger
         Logger object for logging messages.
     """
 
@@ -40,15 +63,39 @@ def add_panres_genes(file: str, onto: Ontology, logger = logger):
     panres_metadata['chosenSeq'] = panres_metadata['chosenSeq'].str.replace("_v1.0.0", "", regex=False)
     panres_metadata['database'] = panres_metadata['database'].str.replace("_genes", "")
 
+
+    # Get list of discarded genes
+    discarded_genes_list = discarded_genes(discarded)
+    discarded_df = pd.DataFrame({'pan_gene': discarded_genes_list, 'status': 'discarded', 'reason': ''})
+    discarded_df = discarded_df.merge(
+        panres_metadata.pivot_table(
+            index='userGeneName',
+            columns = 'database',
+            values='fa_header',
+            aggfunc=','.join
+        ),
+        left_on = 'pan_gene',
+        right_index=True,
+    )
+    discarded_df.columns = discarded_df.columns.str.lower()#
+    discarded_df = discarded_df.rename(columns = database2name)
+    discarded_df.to_csv(os.path.join(os.path.dirname(discarded), 'panres_discarded_genes.csv'), index=False)
+
+    # Remove discarded genes from the metadata
+    panres_metadata = panres_metadata[~panres_metadata['userGeneName'].isin(discarded_genes_list)]
+    
     # Get a list of the unique gene names
     genes = panres_metadata['userGeneName'].unique().tolist()
-
+    # genes = panres_metadata.loc[panres_metadata['database'] == 'resfinder', 'userGeneName'].unique().tolist()
+    
     # Loop through each unique gene, add it to the ontology and its annotations
     for gene in set(genes):
-        new_gene = onto.PanGene(gene)
 
         # Get annotation data for the correct gene
         m = panres_metadata.loc[panres_metadata['userGeneName'] == gene, ]
+        
+        # Make new PanGene instance
+        new_gene = onto.PanGene(gene)
 
         # add the gene length if its consistent across all entries
         if m['gene_len'].nunique() == 1:

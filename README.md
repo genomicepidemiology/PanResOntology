@@ -30,10 +30,13 @@ The module in [model.py](/code/model.py) defines the ontology schema for the Pan
 
 Extended documentation on the classes and properties are described in the [model.md](docs/model.md) file.
 
+This figure shows the information structured in the ontology for the `pan_1` gene.
+![Example of PanRes ontology](panres_ont_example.png)
+
 ### Things to Implement
 - [ ] Finish the description of annotation properties in [model.md](docs/model.md).
 - [ ] Correctly link gene to protein translations.
 - [ ] Link PubMed IDs and accessions to all genes and proteins.
 - [ ] Link protein structures to ontology.
-- [ ] Setup schema for adding new information to the ontologyæ
+- [ ] Setup schema for adding new information to the ontology
 - [ ] Review the "unclassified" classes of resistances and correctly place them.

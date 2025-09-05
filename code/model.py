@@ -30,6 +30,9 @@ def createModel(onto):
     class OriginalGene(Gene): 
         description = "This is the original name extracted from the fasta header for each individual gene."
 
+    class DiscardedPanGene(PanGene):
+        description = "An identifier for PanGenes that have been discarded from the current version of the PanRes database"
+
     class PanGeneCluster(Gene): pass
 
     # Need a disjoint relationship between PanGene and OriginalGene individuals
@@ -69,16 +72,19 @@ def createModel(onto):
     class UnclassifiedResistanceClass(ResistanceType): pass
     class UnclassifiedResistance(UnclassifiedResistanceClass): pass
 
-    class ResistanceMechanism(Resistance): pass
-    class AntibioticResistanceMechanism(ResistanceMechanism): pass
+    class ResistanceMechanism(ResistanceType): pass
 
     # In PanRes 2.0, we are pivoting into proteins as well
     class Protein(Resistance):
         description = "Genes are translated into proteins, which was added as a new component of the PanRes database in version 2.0."
+    class Structure(Protein):
+        description = "This is a class for 3D structures, which can be used to represent protein structures or other relevant structures in the context of resistance."
 
-    class PanProtein(Protein): pass
-    class OriginalProtein(PanProtein): pass
     class PanProteinCluster(Protein): pass
+    class PanProtein(Protein): pass
+
+    class PanStructureCluster(Structure): pass
+    class PanStructure(Structure): pass
 
     '''
     Functional properties
@@ -109,8 +115,13 @@ def createModel(onto):
         namespace = onto
     
     class member_of(ObjectProperty):
-        domain = [Or([PanGene, PanProtein])]
-        range = [Or([PanGeneCluster, PanProteinCluster])]
+        domain = [Or([PanGene, PanProtein, PanStructure])]
+        range = [Or([PanGeneCluster, PanProteinCluster, PanStructureCluster])]
+        namespace = onto
+
+    class has_members(AnnotationProperty):
+        domain = [Or([PanGeneCluster, PanProteinCluster, PanStructureCluster])]
+        range = [str]
         namespace = onto
 
     class original_fasta_header(AnnotationProperty):
@@ -122,7 +133,12 @@ def createModel(onto):
         domain = [PanGene]
         range = [OriginalGene]
         namespace = onto
+    class has_pan_name(ObjectProperty): 
+        domain = [OriginalGene]
+        range = [PanGene]
+        namespace = onto
 
+    has_pan_name.inverse_property = same_as
     class gene_alt_name(OriginalGene >> str): 
         namespace = onto
 
@@ -146,6 +162,12 @@ def createModel(onto):
         domain = [PanGeneCluster]
         range = [Protein]
         namespace = onto
+
+    class folds_to(ObjectProperty): #(Protein >> Structure):
+        domain = [PanProteinCluster]
+        range = [PanStructure]
+        namespace = onto
+
     class is_drug_combination(AnnotationProperty): #(AntibioticResistancePhenotype >> bool): 
         domain = [Or([AntibioticResistancePhenotype, Metal, Biocide])]
         range = [bool]

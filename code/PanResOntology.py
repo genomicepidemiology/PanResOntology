@@ -7,7 +7,7 @@ from loguru import logger
 
 logger.add("panres_messages.log")
 
-onto = get_ontology("http://myonto.com/PanResOntology.owl")
+onto = get_ontology("http://genepi.dk/PanResOntology.owl")
 logger.success(f"Created an empty ontology: {onto.base_iri}")
 
 model.createModel(onto)

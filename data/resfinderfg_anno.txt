@@ -1,0 +1,48 @@
+Source
+Four functional metagenomic studies were considered1Ð4, that analysed human faecal samples, sewage, latrines and soils.
+The sequences of the inserts were downloaded according the access numbers provided in the publications using BatchEntrez.
+
+Processing of the inserts
+The inserts were annotated with PROKKA5 in order to distinct putative ARDs from other genes present in the insert. Then, only ARDs selected on antibiotics towards which they are assumed to confer resistance have been selected (e.g. a Tet(M) variant found on an insert selected on amoxicillin was not considered further).
+For more than one ARD on the contigs: the ARD which was assumed to confer resistance to the antibiotic in the medium was kept. If both could confer resistance to the antibiotic, they were not considered.
+Eventually, as some partial genes were found, only ARDs with at least the median amino acid size of ARDs from the same ARD family were kept (260aa for beta-lactamases, 178aa for Cat, 378aa for Tet_efflux, 641aa for Tet_protection, 247aa for 16S rRNA methlytransferases and 158aa for Dfr.
+
+The different ARD families are:
+16S_rRNA_methyltransferase: 16S rRNA methyltransferase for aminoglycoside resistance
+AAC: aminoglycosides acetyl-transferases
+ANT: aminoglycosides nucleotidyl-transferases
+APH: aminoglycosides phospho-transferases
+beta_lactamase: beta-lactamases (all sub-families)
+cat: chloramphenicol acetyl-transferases
+dfr: dihydrofolate reductase
+efflux_pump: efflux pumps
+qnr: quinolone resistance
+tet_efflux: spanning Tet(A) and variants
+tet_protection: spanning Tet(M) and variants
+tetX: tetracycline monooxygenases
+van_ligase: homologues of D-Ala-D-x ligases (selected on D-cycloserine)
+
+The different antibiotics used for selection are:
+AMK: amikacin
+AMX: amoxycillin
+ATM: aztreonam
+CAR: carbenicillin
+CAZ: ceftazidime
+CDR: cefdinir
+CHL: chloramphenicol
+CIP: ciprofloxacin
+CTX: cefotaxime
+CYC: D-cycloserine
+FEP: cefepime
+FOX: cefoxitin
+GEN: gentamicin
+MIN: minocycline
+OXY: oxytetracycline
+PEN: penicillin
+PIP: piperacillin
+SIS: sisomycin
+SXT: cotrimoxazole
+TET: tetracycline
+TGC: tigecycline
+TMP: trimethoprim
+TZP: piperacillin+tazobactam

@@ -42,7 +42,9 @@ def parse_args():
             'member_of', 
             'has_members',
             'translates_to',
-            'has_mechanism_of_resistance'
+            'has_mechanism_of_resistance',
+            'original_fasta_header',
+            'folds_to'
         ]
 
     )
@@ -68,7 +70,7 @@ if __name__ == "__main__":
                         vv.append(str(v.name))
                     else:
                         vv.append(str(v))
-                value = ', '.join(vv)
+                value = ';'.join(vv)
             elif isinstance(value, Thing):
                 value = str(value.name)
             row[col] = value
@@ -76,7 +78,13 @@ if __name__ == "__main__":
     
     # Convert data to pandas dataframe
     df = pd.DataFrame(data)
-    print(df.head())
+
+    # Replace empty strings with NaN
+    df = df.replace('', pd.NA)
+    
+    # Drop empty rows in attribute columns
+    columns = [col for col in args.columns if col not in ['name']]
+    df = df.dropna(subset=columns, how='all')
 
     # Save the dataframe to a CSV file
     os.makedirs(os.path.dirname(args.output), exist_ok=True)

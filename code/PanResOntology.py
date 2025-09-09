@@ -23,13 +23,13 @@ panres.add_panres_genes("data/PanRes_data_v1.0.0.tsv", onto = onto, logger = log
 panres.add_panres_proteins(file = 'data/proteins/panres_final_protein.faa', clstrs='data/proteins/panres_final_protein_50_90.faa.clstr', onto = onto, logger = logger)
 
 # Load data about ResFinder genes
-resfinder.add_resfinder_annotations("data/resfinder_db/phenotypes.txt", onto, logger=logger)
+resfinder.add_resfinder_annotations("data/phenotypes.txt", onto, logger=logger)
 
 # Load data about CARD genes
 card.add_card_annotations("data/aro_index.tsv", onto, logger=logger)
 
 # Load data about MegaRes genes
-megares.add_megares_annotations(onto, logger=logger, mappingfile='data/megares_to_external_header_mappings_v3.00_kopi.csv')
+megares.add_megares_annotations(onto, logger=logger, mappingfile='data/megares_to_external_header_mappings_v3.00.csv')
 
 # Load data about ResFinderFG genes
 resfinderfg.add_resfinderfg_annotations("data/resfinderfg_anno.txt", onto, logger=logger)

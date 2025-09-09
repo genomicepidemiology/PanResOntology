@@ -4,7 +4,7 @@
 First metadata table for PanRes v.1.0.0 retrieved from: https://zenodo.org/records/8055116
 
 ## ResFinder
-Phenotypes for ResFinder genes retrieved from: https://bitbucket.org/genomicepidemiology/resfinder_db
+Phenotypes for ResFinder genes retrieved from: https://bitbucket.org/genomicepidemiology/resfinder_db/raw/master/phenotypes.txt
 
 ## ResFinderFG
 The acronyms for the ResFinderFG genes are translated both with a manual lookup of the pubmed IDs, as well as using the file retrieved like this:
@@ -18,7 +18,7 @@ mv additional_info.txt resfinderfg_anno.txt
 Annotations for CARD genes retrieved from: https://card.mcmaster.ca/latest/data
 
 ## MegaRes
-Information about the genes is extracted from the FASTA headers.
+Information about the genes is extracted from the FASTA headers and matched with the CSV file from: https://www.meglab.org/downloads/megares_v3.00/megares_to_external_header_mappings_v3.00.csv
 
 ## AMRFinderPlus
 The gene annotations for AMRFinderPlus retrieved from: https://ftp.ncbi.nlm.nih.gov/pathogen/Antimicrobial_resistance/AMRFinderPlus/database/latest/ReferenceGeneCatalog.txt
